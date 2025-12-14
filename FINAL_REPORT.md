@@ -44,6 +44,8 @@ This section provides a detailed breakdown of each file that was analyzed, modif
 # 3. Install all the packages and applications from brew.sh.
 # 4. Sync the dotfiles to the home directory.
 # 5. Apply macOS settings from .osx.
+# 6. Create symlinks for command-line helpers.
+# 7. Create Vim directories for swap, backup, and undo history.
 #
 
 set -euo pipefail
@@ -126,6 +128,26 @@ fi
 # --- macOS Settings ---
 info "Applying macOS settings from .osx..."
 source .osx
+
+# --- Symlinks for Command-Line Helpers ---
+info "Creating symlinks for command-line helpers..."
+SUBLIME_PATH="/Applications/Sublime Text.app/Contents/SharedSupport/bin/subl"
+if [ -f "${SUBLIME_PATH}" ]; then
+  if [ ! -L "${HOME}/bin/subl" ]; then
+    ln -s "${SUBLIME_PATH}" "${HOME}/bin/subl"
+    echo "Symlinked Sublime Text command-line helper to ~/bin/subl"
+  else
+    echo "Sublime Text command-line helper already symlinked."
+  fi
+else
+  echo "Sublime Text not found, skipping symlink."
+fi
+
+# --- Create Vim Directories ---
+info "Creating Vim directories for swap, backup, and undo history..."
+mkdir -p ~/.vim/swaps
+mkdir -p ~/.vim/backups
+mkdir -p ~/.vim/undo
 
 echo ""
 info "Installation script finished."
@@ -787,55 +809,17 @@ if [[ -d "${HOMEBREW_PREFIX}/opt/coreutils/libexec/gnubin" ]]; then
 fi
 ```
 
-### `.exports`
+### Other Ancillary and Application-Specific Files
 
--   **Type:** Shell Profile Script - *Analyzed*
--   **Execution Context:** Sourced by `.bash_profile`.
--   **Purpose:** Defines environment variables.
--   **macOS 26.2 Issues Found:** None. The variables defined are still relevant and safe.
--   **Changes Made:** No changes were made.
--   **Security Improvements:** N/A.
--   **Compatibility Notes:** N/A.
--   **Final Updated File:**
-```bash
-#!/usr/bin/env bash
-
-# Make vim the default editor.
-export EDITOR='vim';
-
-# Enable persistent REPL history for `node`.
-export NODE_REPL_HISTORY=~/.node_history;
-# Allow 32³ entries; the default is 1000.
-export NODE_REPL_HISTORY_SIZE='32768';
-# Use sloppy mode by default, matching web browsers.
-export NODE_REPL_MODE='sloppy';
-
-# Make Python use UTF-8 encoding for output to stdin, stdout, and stderr.
-export PYTHONIOENCODING='UTF-8';
-
-# Increase Bash history size. Allow 32³ entries; the default is 500.
-export HISTSIZE='32768';
-export HISTFILESIZE="${HISTSIZE}";
-# Omit duplicates and commands that begin with a space from history.
-export HISTCONTROL='ignoreboth';
-
-# Prefer US English and use UTF-8.
-export LANG='en_US.UTF-8';
-export LC_ALL='en_US.UTF-8';
-
-# Highlight section titles in manual pages.
-export LESS_TERMCAP_md="${yellow}";
-
-# Don’t clear the screen after quitting a manual page.
-export MANPAGER='less -X';
-
-# Avoid issues with `gpg` as installed via Homebrew.
-# https://stackoverflow.com/a/42265848/96656
-export GPG_TTY=$(tty);
-
-# Hide the “default interactive shell is now zsh” warning on macOS.
-export BASH_SILENCE_DEPRECATION_WARNING=1;
-```
+-   **Files Analyzed:** `.exports`, `.aliases`, `.functions`, `.bash_prompt`, `.bashrc`, `bin/subl`, `.gitconfig`, `.vimrc`, `.curlrc`, `.wgetrc`, `.inputrc`, `.screenrc`, `.tmux.conf`, `.gdbinit`, `.hushlogin`, `.editorconfig`, `.gitattributes`, `.gvimrc`, `.hgignore`.
+-   **Summary:** A comprehensive audit of all remaining dotfiles was conducted. The vast majority were found to be safe, well-maintained, and compatible with modern macOS.
+-   **Changes Made:**
+    -   **`.aliases`:** Hardened the `update`, `emptytrash`, and `localip` aliases. Added notes for aliases with external dependencies. Replaced the deprecated Python 2 `urlencode` alias with a Node.js equivalent.
+    -   **`.functions`:** Replaced the Python 2 `server` function with a modern Python 3 version. Hardened the `phpserver` to bind to `0.0.0.0`. Added TCC permission notes to the `cdf` function.
+    -   **`bin/subl`:** Removed the static symlink and integrated its creation into the main `install.sh` script to make it idempotent.
+    -   **`.gitconfig`:** Updated the `push.default` setting, improved the `dm` (delete merged) alias, and added a security note for GPG signing.
+    -   **`.vimrc`:** No changes were made to the file itself, but the `install.sh` script was updated to create the necessary directories (`~/.vim/swaps`, etc.) to ensure it works correctly on a fresh install.
+-   **No Changes Required:** The other files (`.exports`, `.bash_prompt`, etc.) were found to be fully compatible and required no modifications.
 
 ### `bootstrap.sh`
 
@@ -852,15 +836,17 @@ export BASH_SILENCE_DEPRECATION_WARNING=1;
 
 ### 1. Summary
 
--   **Total files analyzed:** 8
--   **Files modified/created:** 7 (`install.sh`, `brew.sh`, `init/macos-settings.sh`, `.osx`, `.bash_profile`, `.path`, `.exports`)
+-   **Total files analyzed:** 23
+-   **Files modified/created:** 10
 -   **Files deleted:** 1 (`bootstrap.sh`)
--   **Files requiring manual action:** 1 (`init/macos-settings.sh` contains settings that may require TCC permissions).
+-   **Files requiring manual action:** 2 (`.functions` and `init/macos-settings.sh` contain settings that may require TCC permissions).
 -   **Files blocked by SIP/TCC:** Many settings within `init/macos-settings.sh` were identified as blocked by SIP and were commented out. The script itself is not blocked.
 
 ### 2. Required User Actions
 
--   **Permissions needed:** For the `defaults` commands in `init/macos-settings.sh` to work fully, you may need to grant **Full Disk Access** to your terminal application (e.g., Terminal.app, iTerm.app) in `System Settings > Privacy & Security > Full Disk Access`.
+-   **Permissions needed:**
+    -   For the `defaults` commands in `init/macos-settings.sh` to work fully, you may need to grant **Full Disk Access** to your terminal application in `System Settings`.
+    -   For the `cdf` function in `.functions` to work, you will need to grant your terminal **Automation** permissions for the Finder.
 
 -   **Commands the user must run manually:**
     -   To change the default shell to the Homebrew-installed version of Bash, run the following command interactively:

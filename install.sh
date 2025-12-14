@@ -14,6 +14,8 @@
 # 3. Install all the packages and applications from brew.sh.
 # 4. Sync the dotfiles to the home directory.
 # 5. Apply macOS settings from .osx.
+# 6. Create symlinks for command-line helpers.
+# 7. Create Vim directories for swap, backup, and undo history.
 #
 
 set -euo pipefail
@@ -96,6 +98,26 @@ fi
 # --- macOS Settings ---
 info "Applying macOS settings from .osx..."
 source .osx
+
+# --- Symlinks for Command-Line Helpers ---
+info "Creating symlinks for command-line helpers..."
+SUBLIME_PATH="/Applications/Sublime Text.app/Contents/SharedSupport/bin/subl"
+if [ -f "${SUBLIME_PATH}" ]; then
+  if [ ! -L "${HOME}/bin/subl" ]; then
+    ln -s "${SUBLIME_PATH}" "${HOME}/bin/subl"
+    echo "Symlinked Sublime Text command-line helper to ~/bin/subl"
+  else
+    echo "Sublime Text command-line helper already symlinked."
+  fi
+else
+  echo "Sublime Text not found, skipping symlink."
+fi
+
+# --- Create Vim Directories ---
+info "Creating Vim directories for swap, backup, and undo history..."
+mkdir -p ~/.vim/swaps
+mkdir -p ~/.vim/backups
+mkdir -p ~/.vim/undo
 
 echo ""
 info "Installation script finished."
