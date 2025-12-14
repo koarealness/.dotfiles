@@ -73,7 +73,10 @@ defaults write com.apple.print.PrintingPrefs "Quit When Finished" -bool true
 # defaults write com.apple.LaunchServices LSQuarantine -bool false
 
 # Rebuild the Launch Services database to remove duplicates in the "Open With" menu
-/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user
+LSREGISTER_PATH="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+if [ -f "${LSREGISTER_PATH}" ]; then
+  "${LSREGISTER_PATH}" -kill -r -domain local -domain system -domain user
+fi
 
 # Disable automatic termination of inactive apps
 defaults write NSGlobalDomain NSDisableAutomaticTermination -bool true
@@ -84,7 +87,7 @@ sudo defaults write /Library/Preferences/com.apple.loginwindow AdminHostInfo Hos
 # --- SIP PROTECTED ---
 # Disabling Notification Center via launchctl is blocked by SIP on modern macOS
 # as it tries to modify /System/Library/LaunchAgents.
-# launchctl unload -w /System/Library/LaunchAgents/com.apple.notificationcenterui.plist 2> /dev/null
+# launchctl unload -w /System/Library/LaunchAgents/com.apple.notificationcenterui.plist 2>/dev/null
 
 # Disable automatic capitalization, smart dashes, automatic periods, and smart quotes
 defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
@@ -131,7 +134,7 @@ sudo systemsetup -settimezone "Etc/UTC" > /dev/null
 # --- SIP PROTECTED ---
 # Unloading the remote control daemon is blocked by SIP.
 # The Music app and other media services now manage this.
-# launchctl unload -w /System/Library/LaunchAgents/com.apple.rcd.plist 2> /dev/null
+# launchctl unload -w /System/Library/LaunchAgents/com.apple.rcd.plist 2>/dev/null
 
 # --- Energy Saving ---
 

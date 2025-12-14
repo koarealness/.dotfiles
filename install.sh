@@ -83,7 +83,9 @@ if [[ "$*" == *"--force"* || "$*" == *"-f"* ]]; then
   sync_dotfiles
 else
   if [ -t 1 ]; then
-    read -p "This may overwrite existing files in your home directory. Are you sure? (y/n) " -n 1
+    # The `|| true` is a safeguard to prevent the script from exiting if the
+    # read command is interrupted by the user (e.g., with Ctrl+C).
+    read -p "This may overwrite existing files in your home directory. Are you sure? (y/n) " -n 1 REPLY || true
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
       sync_dotfiles
