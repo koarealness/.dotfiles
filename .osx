@@ -1,1 +1,7 @@
-# 301 https://github.com/mathiasbynens/dotfiles/blob/main/.macos
+#!/usr/bin/env bash
+
+# ~/.osx — Run the macOS settings script
+
+# Source the macos-settings.sh script from the init directory
+# This script contains a series of 'defaults write' commands to configure macOS
+source "$(dirname "${BASH_SOURCE}")/init/macos-settings.sh";

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+#
+# .path: Sets up the command-line path in an architecture-aware manner.
+#
+# This file is sourced by .bash_profile and should contain all PATH modifications.
+# It handles the different Homebrew locations for Apple Silicon and Intel Macs.
+#
+
+# --- Architecture-Aware Homebrew Path ---
+
+# Determine the correct Homebrew prefix based on the system architecture.
+# Apple Silicon (arm64): /opt/homebrew
+# Intel (x86_64): /usr/local
+ARCH=$(uname -m)
+if [[ "$ARCH" == "arm64" ]]; then
+  HOMEBREW_PREFIX="/opt/homebrew"
+else
+  HOMEBREW_PREFIX="/usr/local"
+fi
+
+# Prepend Homebrew's binary paths to the main PATH.
+# This ensures that Homebrew-installed tools take precedence over system defaults.
+export PATH="${HOMEBREW_PREFIX}/bin:${HOMEBREW_PREFIX}/sbin:${PATH}"
+
+# --- User-Specific Path ---
+
+# Add the user's local bin directory to the PATH.
+export PATH="${HOME}/bin:${PATH}"
+
+# --- GNU Core Utilities Path ---
+
+# Add GNU coreutils to the PATH if available.
+# These utilities are preferred over the outdated BSD versions on macOS.
+if [[ -d "${HOMEBREW_PREFIX}/opt/coreutils/libexec/gnubin" ]]; then
+  export PATH="${HOMEBREW_PREFIX}/opt/coreutils/libexec/gnubin:${PATH}"
+  # Also update the MANPATH for the GNU coreutils man pages.
+  export MANPATH="${HOMEBREW_PREFIX}/opt/coreutils/libexec/gnuman:${MANPATH}"
+fi

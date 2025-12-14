@@ -1,101 +1,110 @@
 #!/usr/bin/env bash
+#
+# brew.sh: Installs and configures Homebrew and its packages.
+#
+# This script is designed to be idempotent and architecture-aware.
+# It supports both Apple Silicon (arm64) and Intel (x86_64) Macs.
+#
 
-# Install command-line tools using Homebrew.
+set -euo pipefail
 
-# Make sure we’re using the latest Homebrew.
-brew update
+# --- Helper Functions ---
+info() {
+  printf "\n\033[1;34m%s\033[0m\n" "$1"
+}
 
-# Upgrade any already-installed formulae.
-brew upgrade
+# --- Architecture and Homebrew Setup ---
+ARCH=$(uname -m)
+if [[ "$ARCH" == "arm64" ]]; then
+  HOMEBREW_PREFIX="/opt/homebrew"
+else
+  HOMEBREW_PREFIX="/usr/local"
+fi
+HOMEBREW_BIN="${HOMEBREW_PREFIX}/bin/brew"
 
-# Save Homebrew’s installed location.
-BREW_PREFIX=$(brew --prefix)
+info "Detected architecture: ${ARCH}"
+info "Homebrew prefix set to: ${HOMEBREW_PREFIX}"
 
-# Install GNU core utilities (those that come with macOS are outdated).
-# Don’t forget to add `$(brew --prefix coreutils)/libexec/gnubin` to `$PATH`.
-brew install coreutils
-ln -s "${BREW_PREFIX}/bin/gsha256sum" "${BREW_PREFIX}/bin/sha256sum"
+# --- Package Installation ---
+install_packages() {
+  info "Updating Homebrew and installing packages..."
+  "${HOMEBREW_BIN}" update
+  "${HOMEBREW_BIN}" upgrade
 
-# Install some other useful utilities like `sponge`.
-brew install moreutils
-# Install GNU `find`, `locate`, `updatedb`, and `xargs`, `g`-prefixed.
-brew install findutils
-# Install GNU `sed`, overwriting the built-in `sed`.
-brew install gnu-sed --with-default-names
-# Install a modern version of Bash.
-brew install bash
-brew install bash-completion2
+  # GNU core utilities
+  "${HOMEBREW_BIN}" install coreutils
 
-# Switch to using brew-installed bash as default shell
-if ! fgrep -q "${BREW_PREFIX}/bin/bash" /etc/shells; then
-  echo "${BREW_PREFIX}/bin/bash" | sudo tee -a /etc/shells;
-  chsh -s "${BREW_PREFIX}/bin/bash";
-fi;
+  # Symlink for sha256sum if it doesn't exist
+  if [[ ! -L "${HOMEBREW_PREFIX}/bin/sha256sum" ]]; then
+    ln -s "${HOMEBREW_PREFIX}/bin/gsha256sum" "${HOMEBREW_PREFIX}/bin/sha256sum"
+  fi
 
-# Install `wget` with IRI support.
-brew install wget --with-iri
+  # Other useful utilities
+  "${HOMEBREW_BIN}" install moreutils findutils gnu-sed bash bash-completion2
 
-# Install GnuPG to enable PGP-signing commits.
-brew install gnupg
+  # Networking tools
+  "${HOMEBREW_BIN}" install wget nmap socat dns2tcp tcpflow tcpreplay tcptrace ucspi-tcp
 
-# Install more recent versions of some macOS tools.
-brew install vim --with-override-system-vi
-brew install grep
-brew install openssh
-brew install screen
-brew install php
-brew install gmp
+  # Security and PGP
+  "${HOMEBREW_BIN}" install gnupg
 
-# Install font tools.
-brew tap bramstein/webfonttools
-brew install sfnt2woff
-brew install sfnt2woff-zopfli
-brew install woff2
+  # More recent versions of macOS tools
+  "${HOMEBREW_BIN}" install vim grep openssh screen gmp
 
-# Install some CTF tools; see https://github.com/ctfs/write-ups.
-brew install aircrack-ng
-brew install bfg
-brew install binutils
-brew install binwalk
-brew install cifer
-brew install dex2jar
-brew install dns2tcp
-brew install fcrackzip
-brew install foremost
-brew install hashpump
-brew install hydra
-brew install john
-brew install knock
-brew install netpbm
-brew install nmap
-brew install pngcheck
-brew install socat
-brew install sqlmap
-brew install tcpflow
-brew install tcpreplay
-brew install tcptrace
-brew install ucspi-tcp # `tcpserver` etc.
-brew install xpdf
-brew install xz
+  # PHP is commented out as the core formula is often not desired.
+  # Consider 'brew tap shivammathur/php' and 'brew install shivammathur/php/php@8.1'
+  # "${HOMEBREW_BIN}" install php
 
-# Install other useful binaries.
-brew install ack
-#brew install exiv2
-brew install git
-brew install git-lfs
-brew install gs
-brew install imagemagick --with-webp
-brew install lua
-brew install lynx
-brew install p7zip
-brew install pigz
-brew install pv
-brew install rename
-brew install rlwrap
-brew install ssh-copy-id
-brew install tree
-brew install vbindiff
-brew install zopfli
+  # Font tools
+  "${HOMEBREW_BIN}" tap bramstein/webfonttools
+  "${HOMEBREW_BIN}" install sfnt2woff sfnt2woff-zopfli woff2
 
-# Remove outdated versions from the cellar.
-brew cleanup
+  # CTF tools
+  "${HOMEBREW_BIN}" install aircrack-ng bfg binutils binwalk cifer dex2jar fcrackzip foremost hashpump hydra john knock netpbm pngcheck sqlmap xpdf xz
+
+  # Other useful binaries
+  "${HOMEBREW_BIN}" install ack git git-lfs gs imagemagick lua lynx p7zip pigz pv rename rlwrap ssh-copy-id tree vbindiff zopfli
+
+  info "Cleaning up outdated versions..."
+  "${HOMEBREW_BIN}" cleanup
+}
+
+# --- Change Shell ---
+change_shell() {
+  info "Changing default shell to Homebrew Bash..."
+  local brew_bash="${HOMEBREW_PREFIX}/bin/bash"
+
+  if ! grep -q "${brew_bash}" /etc/shells; then
+    info "Adding Homebrew Bash to /etc/shells..."
+    echo "${brew_bash}" | sudo tee -a /etc/shells
+  fi
+
+  if [[ "${SHELL}" != "${brew_bash}" ]]; then
+    if chsh -s "${brew_bash}"; then
+      echo "Shell changed successfully. Please open a new terminal."
+    else
+      echo "Failed to change shell. Please run 'chsh -s ${brew_bash}' manually." >&2
+    fi
+  else
+    echo "Homebrew Bash is already the default shell."
+  fi
+}
+
+# --- Main Logic ---
+install_packages
+
+# Handle shell change request
+if [[ "$*" == *"--change-shell"* ]]; then
+  if [ -t 1 ]; then # Check for interactive terminal
+    change_shell
+  else
+    echo "Cannot change shell non-interactively."
+    echo "Please run the following command manually:"
+    echo "  chsh -s ${HOMEBREW_PREFIX}/bin/bash"
+  fi
+else
+  echo ""
+  info "To change your default shell to Homebrew Bash, run this script with the --change-shell flag."
+fi
+
+info "Homebrew script finished."

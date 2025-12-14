@@ -1,50 +1,63 @@
-# Add `~/bin` to the `$PATH`
-export PATH="$HOME/bin:$PATH";
+# ~/.bash_profile: Executed for login shells.
+# For a comprehensive setup, this file sources other configuration files.
 
-# Load the shell dotfiles, and then some:
-# * ~/.path can be used to extend `$PATH`.
-# * ~/.extra can be used for other settings you don’t want to commit.
+# Source all rc files and profile extensions.
+# - .path: Manages the command-line PATH in an architecture-aware way.
+# - .bash_prompt: Contains the prompt configuration.
+# - .exports: Defines environment variables.
+# - .aliases: Contains shell aliases.
+# - .functions: Holds custom shell functions.
+# - .extra: For personal, non-committed settings.
 for file in ~/.{path,bash_prompt,exports,aliases,functions,extra}; do
-	[ -r "$file" ] && [ -f "$file" ] && source "$file";
-done;
-unset file;
+	if [ -r "$file" ] && [ -f "$file" ]; then
+		source "$file"
+	fi
+done
+unset file
 
-# Case-insensitive globbing (used in pathname expansion)
-shopt -s nocaseglob;
+# --- Shell Options ---
 
-# Append to the Bash history file, rather than overwriting it
-shopt -s histappend;
+# Case-insensitive globbing (e.g., `ls *.jpg` matches `.JPG`).
+shopt -s nocaseglob
 
-# Autocorrect typos in path names when using `cd`
-shopt -s cdspell;
+# Append to the Bash history file, rather than overwriting it.
+shopt -s histappend
 
-# Enable some Bash 4 features when possible:
-# * `autocd`, e.g. `**/qux` will enter `./foo/bar/baz/qux`
-# * Recursive globbing, e.g. `echo **/*.txt`
+# Autocorrect typos in path names when using `cd`.
+shopt -s cdspell
+
+# Enable modern Bash features if available (Bash 4+).
+# - autocd: Enter a directory name without `cd`.
+# - globstar: Recursive globbing with `**`.
 for option in autocd globstar; do
-	shopt -s "$option" 2> /dev/null;
-done;
+	shopt -s "$option" 2> /dev/null
+done
 
-# Add tab completion for many Bash commands
-if which brew &> /dev/null && [ -r "$(brew --prefix)/etc/profile.d/bash_completion.sh" ]; then
-	# Ensure existing Homebrew v1 completions continue to work
-	export BASH_COMPLETION_COMPAT_DIR="$(brew --prefix)/etc/bash_completion.d";
-	source "$(brew --prefix)/etc/profile.d/bash_completion.sh";
-elif [ -f /etc/bash_completion ]; then
-	source /etc/bash_completion;
-fi;
+# --- Bash Completion ---
 
-# Enable tab completion for `g` by marking it as an alias for `git`
+# Determine Homebrew prefix based on architecture.
+ARCH=$(uname -m)
+if [[ "$ARCH" == "arm64" ]]; then
+  HOMEBREW_PREFIX="/opt/homebrew"
+else
+  HOMEBREW_PREFIX="/usr/local"
+fi
+
+# Load Bash completion if installed via Homebrew.
+if [ -f "${HOMEBREW_PREFIX}/share/bash-completion/bash_completion" ]; then
+  source "${HOMEBREW_PREFIX}/share/bash-completion/bash_completion"
+fi
+
+# --- Custom Completions ---
+
+# Enable tab completion for `g` as an alias for `git`.
 if type _git &> /dev/null; then
-	complete -o default -o nospace -F _git g;
-fi;
+	complete -o default -o nospace -F _git g
+fi
 
-# Add tab completion for SSH hostnames based on ~/.ssh/config, ignoring wildcards
-[ -e "$HOME/.ssh/config" ] && complete -o "default" -o "nospace" -W "$(grep "^Host" ~/.ssh/config | grep -v "[?*]" | cut -d " " -f2- | tr ' ' '\n')" scp sftp ssh;
-
-# Add tab completion for `defaults read|write NSGlobalDomain`
-# You could just use `-g` instead, but I like being explicit
-complete -W "NSGlobalDomain" defaults;
-
-# Add `killall` tab completion for common apps
-complete -o "nospace" -W "Contacts Calendar Dock Finder Mail Safari iTunes SystemUIServer Terminal Twitter" killall;
+# Add tab completion for SSH hostnames from ~/.ssh/config.
+if [ -e "$HOME/.ssh/config" ]; then
+	complete -o "default" -o "nospace" \
+		-W "$(grep "^Host" ~/.ssh/config | grep -v "[?*]" | cut -d " " -f2- | tr ' ' '\n')" \
+		scp sftp ssh
+fi
