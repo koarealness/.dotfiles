@@ -14,7 +14,7 @@ BREW_PREFIX=$(brew --prefix)
 # Install GNU core utilities (those that come with macOS are outdated).
 # Don’t forget to add `$(brew --prefix coreutils)/libexec/gnubin` to `$PATH`.
 brew install coreutils
-ln -s "${BREW_PREFIX}/bin/gsha256sum" "${BREW_PREFIX}/bin/sha256sum"
+ln -sfn "${BREW_PREFIX}/bin/gsha256sum" "${BREW_PREFIX}/bin/sha256sum"
 
 # Install some other useful utilities like `sponge`.
 brew install moreutils
@@ -22,7 +22,8 @@ brew install moreutils
 brew install findutils
 # Install GNU `sed`, overwriting the built-in `sed`.
 brew install gnu-sed
-ln -s "${BREW_PREFIX}/opt/gnu-sed/libexec/gnubin/sed" "${BREW_PREFIX}/bin/sed"
+# Mirror the old `--with-default-names` option by symlinking the GNU binary over the system one.
+ln -sfn "${BREW_PREFIX}/opt/gnu-sed/libexec/gnubin/sed" "${BREW_PREFIX}/bin/sed"
 # Install a modern version of Bash.
 brew install bash
 brew install bash-completion2
@@ -33,7 +34,7 @@ if ! fgrep -q "${BREW_PREFIX}/bin/bash" /etc/shells; then
   chsh -s "${BREW_PREFIX}/bin/bash";
 fi;
 
-# Install `wget` with IRI support.
+# Install `wget`; IRI support is enabled by default so no extra options are required.
 brew install wget
 
 # Install GnuPG to enable PGP-signing commits.
@@ -41,6 +42,10 @@ brew install gnupg
 
 # Install more recent versions of some macOS tools.
 brew install vim
+# Mirror `--with-override-system-vi` by pointing common aliases to the brew-installed Vim.
+ln -sfn "${BREW_PREFIX}/bin/vim" "${BREW_PREFIX}/bin/vi"
+ln -sfn "${BREW_PREFIX}/bin/vim" "${BREW_PREFIX}/bin/view"
+ln -sfn "${BREW_PREFIX}/bin/vim" "${BREW_PREFIX}/bin/ex"
 brew install grep
 brew install openssh
 brew install screen
@@ -85,6 +90,8 @@ brew install ack
 brew install git
 brew install git-lfs
 brew install gs
+# Install ImageMagick with WebP support (WebP is provided by a separate formula).
+brew install webp
 brew install imagemagick
 brew install lua
 brew install lynx
