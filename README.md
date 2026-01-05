@@ -83,6 +83,16 @@ When setting up a new Mac, you may want to install some common [Homebrew](https:
 
 Some of the functionality of these dotfiles depends on formulae installed by `brew.sh`. If you don’t plan to run `brew.sh`, you should look carefully through the script and manually install any particularly important ones. A good example is Bash/Git completion: the dotfiles use a special version from Homebrew.
 
+### Automated environment setup
+
+For automated environments (such as Jules’ setup script field shown in the screenshot), you can run everything non-interactively with:
+
+```bash
+./setup.sh
+```
+
+By default this syncs the dotfiles into your `$HOME`. To also run `brew.sh`, set `RUN_BREW=1 ./setup.sh` (requires Homebrew to be installed).
+
 ## Feedback
 
 Suggestions/improvements
