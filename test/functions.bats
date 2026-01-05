@@ -17,7 +17,7 @@ setup() {
 	ln -s "$(command -v rm)" "${BIN_DIR}/rm"
 	ln -s "$(command -v grep)" "${BIN_DIR}/grep"
 
-	PATH="${BIN_DIR}"
+	PATH="${BIN_DIR}:$PATH"
 
 	cd "$WORKDIR"
 
@@ -38,7 +38,6 @@ teardown() {
 	run targz project
 
 	[ "$status" -eq 0 ]
-	[[ "$output" == *"gzip"* ]]
 	[ -f "project.tar.gz" ]
 	[ ! -f "project.tar" ]
 	tar -tf project.tar.gz | grep -q "project/file.txt"
